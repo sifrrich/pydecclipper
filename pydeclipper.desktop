@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=pydecclipper
+Exec=pydecclipper.py
+Terminal=false
+Comment=Tray icon to decrypt gpg armored text in clipboard
+Icon=video-display
+StartupNotify=true
+OnlyShowIn=GNOME;Unity;
