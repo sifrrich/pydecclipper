@@ -51,8 +51,9 @@ class TrayIcon:
 
     def message(self, text):
         win = gtk.Window(icon_name=ICON, title=APPID)
-        win.set_default_size(400, 600)
+        win.set_default_size(580, 600)
         win.set_position(gtk.WindowPosition.CENTER)
+        win.set_keep_above(True)
 
         scrolled_window = gtk.ScrolledWindow()
         scrolled_window.set_border_width(5)
@@ -71,11 +72,14 @@ class TrayIcon:
         win.add(scrolled_window)
         win.show_all()
 
+    # Actually strips the end armor marker, but this is ok for gnupg
     def decrypt(self, data=None):
         clipboard = gtk.Clipboard.get(gdk.SELECTION_CLIPBOARD).wait_for_text()
 
         start = clipboard.find("-----BEGIN PGP MESSAGE-----")
-        end = clipboard.find("-----END PGP MESSAGE-----")
+        end = clipboard[start:].rfind("-----END PGP MESSAGE-----")
+
+        clipboard = clipboard[start:end]
 
         if not -1 in {start, end}:
             gpg = gnupg.GPG(verbose=False, use_agent=True)
