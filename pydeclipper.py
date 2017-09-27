@@ -13,6 +13,9 @@ from gi.repository import Gdk as gdk
 gi.require_version('Notify', '0.7')
 from gi.repository import Notify as notify
 
+gi.require_version('AppIndicator3', '0.1')
+from gi.repository import AppIndicator3
+
 import signal
 
 __author__ = "Franz Richter-Gottfried"
@@ -29,27 +32,10 @@ class TrayIcon:
     def __init__(self):
         self.menu = gtk.Menu()
 
-        APPIND_SUPPORT = True
-        try:
-            gi.require_version('AppIndicator3', '0.1')
-            from gi.repository import AppIndicator3
-        except:
-            APPIND_SUPPORT = False
-
-
-        if APPIND_SUPPORT == True:
-            self.ind = AppIndicator3.Indicator.new(
-                APPID, ICON, AppIndicator3.IndicatorCategory.APPLICATION_STATUS)
-            self.ind.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
-            self.ind.set_menu(self.menu)
-        else:
-            self.ind = gtk.StatusIcon()
-            self.ind.new_from_icon_name("process-stop")
-
-            self.ind.connect('popup-menu', self.on_right_click)
-            self.ind.connect('activate', self.on_left_click)
-
-            self.ind.set_visible(True)
+        self.ind = AppIndicator3.Indicator.new(
+            APPID, ICON, AppIndicator3.IndicatorCategory.APPLICATION_STATUS)
+        self.ind.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
+        self.ind.set_menu(self.menu)
 
         self.make_menu()
 
