@@ -5,9 +5,8 @@ Decrypt PGP encrypted armored clipboard contents
 # Requirements
 
 - Ubuntu 16.04
-- Unity Desktop
-
-- Run `sudo apt-get install python3 python3-gi python-appindicator`
+- Tested window managers: Unity Desktop, herbstluftwm
+- Packages: `python3 python3-gi python-appindicator`
 
 # Usage
 
