@@ -44,18 +44,32 @@ class TrayIcon:
         self.make_menu()
 
     def on_right_click(data, event_button, event_time):
-        print("right click")
         self.menu.popup(None, None, pos, icon, event_button, event_time)
 
     def on_left_click(data, event_button, event_time):
-        print("left click")
         self.decrypt()
 
     def message(self, text):
-        msg = gtk.MessageDialog(None, 0, gtk.MessageType.INFO,
-                gtk.ButtonsType.OK, text, title=APPID,transient_for=None)
-        msg.run()
-        msg.destroy()
+        win = gtk.Window(icon_name=ICON, title=APPID)
+        win.set_default_size(400, 600)
+        win.set_position(gtk.WindowPosition.CENTER)
+
+        scrolled_window = gtk.ScrolledWindow()
+        scrolled_window.set_border_width(5)
+        scrolled_window.set_policy(gtk.PolicyType.AUTOMATIC, gtk.PolicyType.AUTOMATIC)
+
+        tv = gtk.TextView()
+
+        tv.set_editable(False)
+        tv.set_cursor_visible(False)
+        tv.set_wrap_mode(gtk.WrapMode.WORD)
+
+        tv.get_buffer().set_text(text)
+
+        scrolled_window.add(tv)
+
+        win.add(scrolled_window)
+        win.show_all()
 
     def decrypt(self, data=None):
         clipboard = gtk.Clipboard.get(gdk.SELECTION_CLIPBOARD).wait_for_text()
@@ -66,7 +80,9 @@ class TrayIcon:
         if not -1 in {start, end}:
             gpg = gnupg.GPG(verbose=False, use_agent=True)
             decrypted = gpg.decrypt(clipboard)
-            self.message(decrypted)
+
+            if decrypted.ok:
+                self.message(str(decrypted))
 
     def close_app(self, data=None):
         gtk.main_quit()
