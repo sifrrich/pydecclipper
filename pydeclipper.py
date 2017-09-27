@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+"""Decrypt armored messages encrypted with gpg from clipboard
+"""
+
 import gnupg
 import gi
 gi.require_version('Gtk', '3.0')
@@ -11,6 +14,13 @@ gi.require_version('Notify', '0.7')
 from gi.repository import Notify as notify
 
 import signal
+
+__author__ = "Franz Richter-Gottfried"
+__copyright__ = "Copyright 2017, Franz Richter-Gottfried"
+__license__ = "MIT"
+__version__ = "0.1"
+__email__ = "sifrrich@gmail.com"
+__maintainer__ = "Franz Richter-Gottfried"
 
 APPID = "pydeclipper"
 ICON = gtk.STOCK_DIALOG_AUTHENTICATION
