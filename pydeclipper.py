@@ -3,6 +3,8 @@
 """Decrypt armored messages encrypted with gpg from clipboard
 """
 
+import sys
+import argparse
 import gnupg
 import gi
 gi.require_version('Gtk', '3.0')
@@ -29,7 +31,12 @@ APPID = "pydeclipper"
 ICON = gtk.STOCK_DIALOG_AUTHENTICATION
 
 class TrayIcon:
-    def __init__(self):
+    def __init__(self, watch=False):
+        self.watch = watch
+        self.watcher = None
+
+        self.clipboard = gtk.Clipboard.get(gdk.SELECTION_CLIPBOARD)
+
         self.menu = gtk.Menu()
 
         self.ind = AppIndicator3.Indicator.new(
@@ -39,11 +46,26 @@ class TrayIcon:
 
         self.make_menu()
 
-    def on_right_click(data, event_button, event_time):
-        self.menu.popup(None, None, pos, icon, event_button, event_time)
+        # Watch clipboard changes
+        if watch:
+            self.install_watch_handler()
 
-    def on_left_click(data, event_button, event_time):
-        self.decrypt()
+    def decrypt(self, menuitem=None, event=None ):
+        clipboard = self.clipboard.wait_for_text()
+
+        if clipboard is None: return
+
+        start = clipboard.find("-----BEGIN PGP MESSAGE-----")
+        end = clipboard[start:].rfind("-----END PGP MESSAGE-----")
+
+        clipboard = clipboard[start:end]
+
+        if not -1 in {start, end}:
+            gpg = gnupg.GPG(verbose=False, use_agent=True)
+            decrypted = gpg.decrypt(clipboard)
+
+            if decrypted.ok:
+                self.message(str(decrypted))
 
     def message(self, text):
         win = gtk.Window(icon_name=ICON, title=APPID)
@@ -68,46 +90,55 @@ class TrayIcon:
         win.add(scrolled_window)
         win.show_all()
 
-    # Actually strips the end armor marker, but this is ok for gnupg
-    def decrypt(self, data=None):
-        clipboard = gtk.Clipboard.get(gdk.SELECTION_CLIPBOARD).wait_for_text()
-
-        start = clipboard.find("-----BEGIN PGP MESSAGE-----")
-        end = clipboard[start:].rfind("-----END PGP MESSAGE-----")
-
-        clipboard = clipboard[start:end]
-
-        if not -1 in {start, end}:
-            gpg = gnupg.GPG(verbose=False, use_agent=True)
-            decrypted = gpg.decrypt(clipboard)
-
-            if decrypted.ok:
-                self.message(str(decrypted))
-
     def close_app(self, data=None):
         gtk.main_quit()
 
     def make_menu(self):
         decrypt_item = gtk.MenuItem("Decrypt")
+        watch_item = gtk.CheckMenuItem("Watch")
         close_item = gtk.MenuItem("Close")
+
+        watch_item.set_active(self.watch)
 
         #Append the menu items
         self.menu.append(decrypt_item)
+        self.menu.append(watch_item)
         self.menu.append(close_item)
 
         #add callbacks
         decrypt_item.connect("activate", self.decrypt)
+        watch_item.connect("toggled", self.watch_changed)
         close_item.connect("activate", self.close_app)
 
         self.menu.show_all()
 
-def main():
-    TrayIcon()
+    def install_watch_handler(self):
+        self.clipboard_handler = self.clipboard.connect('owner-change', self.decrypt)
+
+    def remove_watch_handler(self):
+        self.clipboard.disconnect(self.clipboard_handler)
+
+    def watch_changed(self, data):
+        if data.get_active():
+            self.install_watch_handler()
+        else:
+            self.remove_watch_handler()
+
+def main(argv):
     signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    p = argparse.ArgumentParser(
+            description='Decrypt armored Gnupg encrypted messages in clipboard.')
+    p.add_argument('-w', default=False, action='store_true',
+        help="Watch clipboard and show decrypted contents automatically")
+
+    args = p.parse_args()
+
+    TrayIcon(watch=args.w)
 
     gtk.main()
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
 
 #  vim: set ts=8 sw=4 ft=python tw=80 nolinebreak et nospell spelllang=en :
